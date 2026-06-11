@@ -1,0 +1,5 @@
+# Model configuration
+# These are stable settings that change rarely.
+# Update when the planning horizon or model scope changes.
+
+prediction_end: "2030-12-01"
