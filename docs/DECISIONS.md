@@ -19,8 +19,7 @@ cohort retention model.
 **Rule:** Model only uses data up to and including the latest fully closed month.
 The current calendar month is always excluded even if data exists, because
 partial-month retention numbers are misleading.
-**Implementation:** `LATEST_CLOSED_MONTH` parameter at the top of every script.
-Auto-detected by default. Can be manually overridden for backtesting.
+**Implementation:** see Decision 007 — auto-detected from data.
 
 ---
 
@@ -63,3 +62,26 @@ month is missing from the seasonality table.
 live in inputs/config.yml, not hardcoded in scripts.
 **Rationale:** Separates code logic from model configuration. New owner can
 adjust settings without touching Python code.
+
+---
+
+## Decision 007 — LATEST_CLOSED_MONTH derived from data, not system clock
+**Date:** 2026-06-11
+**Decision:** LATEST_CLOSED_MONTH = max COHORT_MONTH where LT=0 in the data.
+**Rationale:** The system clock of whatever machine runs this script is
+unreliable for business logic. The data itself tells us which month closed
+last — a new cohort (LT=0 row) only exists once that month is complete.
+
+---
+
+## Decision 008 — Cohort activity gaps are not excluded
+**Date:** 2026-06-11
+**Decision:** Cohorts whose latest observed LT_MONTH is before
+LATEST_CLOSED_MONTH are NOT excluded from projection. They are projected
+forward from their last known point.
+**Rationale:** Especially in small countries (CR, UY, etc.), a cohort can
+have zero activity for a period and later resume if a user reactivates.
+This is normal behavior, not a data quality issue. Confirmed by model owner.
+**Edge case:** Cohorts with no activity since before the seasonality table's
+coverage start (2021-02) will simply produce zero predicted rows — handled
+gracefully by project_cohort's early-exit logic.
